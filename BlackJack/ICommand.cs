@@ -13,10 +13,12 @@ namespace BlackJack {
 
     class HitCommand : ICommand {
         public void Execute(Dealer dealer, Player player) {
+            dealer.IsStanding = false;
             dealer.Hit(player);
         }
 
         public void Execute(Dealer dealer) {
+            dealer.IsStanding = false;
             dealer.Hit(dealer);
         }
 
@@ -41,6 +43,8 @@ namespace BlackJack {
     class DoubleDownCommand : ICommand {
         public void Execute(Dealer dealer, Player player) {
             dealer.Hit(player);
+            player.ChipCount -= player.FinalBetAmount;
+            player.FinalBetAmount *= 2;
             player.IsStanding = true;
         }
 
@@ -78,7 +82,12 @@ namespace BlackJack {
 
         }
         public void Execute(Player player) {
-
+            if (player.BetAmount > 0) {
+                player.FinalBetAmount = player.BetAmount;
+                player.BetAmount = 0;
+                player.ChipCount -= player.FinalBetAmount;
+                player.PlacedBet = true;
+            }
         }
     }
 

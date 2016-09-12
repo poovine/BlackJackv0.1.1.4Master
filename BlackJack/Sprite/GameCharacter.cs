@@ -13,10 +13,12 @@ namespace BlackJack {
         protected List<Card> currentHand = new List<Card>();
         protected List<Vector2> currentHandCardPositions = new List<Vector2>();
         protected string Name { get; set; }
-        protected int lowHandValue, highHandValue;
+        protected int lowHandValue, highHandValue, finalHandValue;
         //protected bool isStanding;
 
         public List<Card> CurrentHand { get { return currentHand; } }
+
+        public int FinalHandValue { get { GetFinalHandValue(); return finalHandValue; } }
 
         public int LowHandValue {
             get {
@@ -69,6 +71,15 @@ namespace BlackJack {
             }
             lowHandValue = totalLow;
             highHandValue = totalHigh;
+        }
+
+        protected void GetFinalHandValue() {
+            if (lowHandValue <= 21 && highHandValue > 21)
+                finalHandValue = lowHandValue;
+            if (lowHandValue <= 21 && highHandValue <= 21)
+                finalHandValue = Math.Max(lowHandValue, highHandValue);
+            if (lowHandValue > 21 && highHandValue > 21)
+                finalHandValue = 0;
         }
     }
 }

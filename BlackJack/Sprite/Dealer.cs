@@ -8,8 +8,11 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace BlackJack {
     class Dealer : GameCharacter {
-    
+
         public bool IsStanding { get; set; }
+        public bool HasBlackJack { get; set; }
+        public bool HasBusted { get; set; }
+
 
         public Dealer(Texture2D playerTexture, Vector2 position, Rectangle maskRectangle)
                         : base(playerTexture, position, maskRectangle) {
@@ -17,8 +20,13 @@ namespace BlackJack {
         }
 
         public override void Update(GameTime gameTime) {
+            Console.WriteLine("DealerStanding? " + this.IsStanding);
+            Console.WriteLine("DealerBusted? " + this.HasBusted); 
+            Console.WriteLine("DealerHighTotal is: " + this.HighHandValue);
+            Console.WriteLine("DealerLowTotal is: " + this.LowHandValue);
+            Console.WriteLine("DealerBlackJack? " + this.HasBlackJack);
+
             base.Update(gameTime);
-            
         }
 
         public override void Draw(SpriteBatch spriteBatch) {
@@ -38,7 +46,7 @@ namespace BlackJack {
             DealCardToDealer();
             RemoveLastCardFromDeck();
         }
-        
+
         public void Hit(GameCharacter gameCharacter) {
             if (gameCharacter is Player) {
                 DealCardToPlayer(gameCharacter as Player);

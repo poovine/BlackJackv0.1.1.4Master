@@ -8,6 +8,8 @@ using Microsoft.Xna.Framework.Input;
 
 namespace BlackJack {
     class InputManager {
+
+        public static ICommand LastInput = null;
         private static InputManager instance;
 
         public static InputManager Instance {
@@ -19,12 +21,12 @@ namespace BlackJack {
             }
         }
         private Player player;
-        private Dealer dealer;      
+        private Dealer dealer;
 
         public InputHandler InputHandler { get; private set; }
 
         public InputManager() {
-            InputHandler = new InputHandler();           
+            InputHandler = new InputHandler();
         }
 
         public void LoadContent() {
@@ -34,12 +36,14 @@ namespace BlackJack {
 
         public void Update(GameTime gameTime) {
             var cmd = InputHandler.HandleInput();
-            cmd.Execute(dealer, player);
-            cmd.Execute(player);
-            Console.WriteLine(cmd is StandCommand);
-            Console.WriteLine(player.IsStanding);            
-                
+            if (cmd.GetType() == typeof(HitCommand) || cmd.GetType() == typeof(DoubleDownCommand)) {
+                LastInput = cmd;
+                cmd.Execute(dealer, player);
+            }
+            else {
+                LastInput = cmd;
+                cmd.Execute(player);
+            }         
         }
     }
-
 }

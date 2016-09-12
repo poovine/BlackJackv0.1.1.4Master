@@ -32,7 +32,6 @@ namespace BlackJack {
             DrawGameCharacters(spriteBatch);
         }
 
-
         public void DrawGameCharacters(SpriteBatch spriteBatch) {
             Player.Draw(spriteBatch);
             Dealer.Draw(spriteBatch);
@@ -44,5 +43,22 @@ namespace BlackJack {
             Player = new Player(playerTexture, playerPosition, new Rectangle(0, 0, playerTexture.Width, playerTexture.Height));
             Dealer = new Dealer(dealerTexture, dealerPosition, new Rectangle(0, 0, dealerTexture.Width, dealerTexture.Height));
         }
+
+        public void ClearHands() {
+            Player.CurrentHand.Clear();
+            Dealer.CurrentHand.Clear();
+        }
+
+        public void ClearPlayerDealerValues() {
+            Player.PlacedBet = false;
+            Player.IsStanding = false;
+            Dealer.IsStanding = false;
+            Player.HasBusted = false;
+            Dealer.HasBusted = false;
+            Player.HasBlackJack = false;
+            Dealer.HasBlackJack = false;
+            Player.HasBeenPaid = false;           
+        }
+  
     }
 }

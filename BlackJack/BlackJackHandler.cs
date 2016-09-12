@@ -7,12 +7,21 @@ using System.Threading.Tasks;
 namespace BlackJack {
     static class BlackJackHandler {
         public static int CheckWinner(Dealer dealer, Player player) {
-            //return 0 for dealer win, 1 for player win, -1 for push
-            if (dealer.HighHandValue > player.HighHandValue)
+            //return 0 for dealer win, 1 for player win, -1 for push, 2 for blackjackwin
+            if (BlackJackHandler.IsBlackJack(dealer))
                 return 0;
-            else if (dealer.HighHandValue < player.HighHandValue) {
+            else if (BlackJackHandler.IsBlackJack(player))
+                return 2;
+            else if (dealer.FinalHandValue > player.FinalHandValue && !dealer.HasBusted)
+                return 0;
+            else if (player.HasBusted)
+                return 0;            
+            else if (dealer.FinalHandValue < player.FinalHandValue && !player.HasBlackJack)
                 return 1;
-            }
+            else if (dealer.HasBusted)
+                return 1;            
+            else if (dealer.FinalHandValue == player.FinalHandValue)
+                return -1;
             else
                 return -1;
         }

@@ -24,6 +24,7 @@ namespace BlackJack {
         }
 
         public enum GamePlayState {
+            InitializeState,
             PlaceBets, //pre cards dealt phase...place bets...once bet placed...state changes to deal cards...only bet buttons active...hit/stand are not
             DealCards, //dealer and player have 2 cards each...check for blackjack...if no blackjack go to player action...if blackjack then get winner           
             PlayerAction, //player able to use hit/stand buttons...bet buttons turned off...after every hit check for bust...
@@ -42,6 +43,11 @@ namespace BlackJack {
         private PlayerManager playerManager;
         private ContentManager content;
 
+        private Player player;
+        private Dealer dealer;
+        private bool cardsDealt = false;
+        private SpriteFont font;
+
         public GamePlayState gamePlayState = GamePlayState.PlaceBets;
 
         public static int SubBet;
@@ -57,24 +63,12 @@ namespace BlackJack {
         public void LoadContent() {
             PlayerManager.LoadContent();
             ButtonManager.LoadContent();
+            font = content.Load<SpriteFont>("font");
+            player = playerManager.Player;
+            dealer = playerManager.Dealer;
 
             /******** Test Area *******/
-            HitCommand hitCommand = new HitCommand();
-
-            PlayerManager.Dealer.DealCards(PlayerManager.Player);
-            Console.WriteLine(PlayerManager.Dealer.HighHandValue);
-            Console.WriteLine(PlayerManager.Player.HighHandValue);
-           // CommandManager.Hit.Execute(PlayerManager.Dealer);
-           // CommandManager.Hit.Execute(PlayerManager.Dealer, PlayerManager.Player);
-
-            //Dealer.Hit(Player);
-            Console.WriteLine(PlayerManager.Player.HighHandValue);
-            Console.WriteLine(BlackJackHandler.IsBlackJack(PlayerManager.Player));
-            // Dealer.Hit(Dealer);
-            Console.WriteLine(PlayerManager.Dealer.HighHandValue);
-            Console.WriteLine(BlackJackHandler.IsBlackJack(PlayerManager.Dealer));
-
-            Console.WriteLine(BlackJackHandler.CheckWinner(PlayerManager.Dealer, PlayerManager.Player));
+  
 
             /******Test Area ********/
         }
@@ -87,34 +81,166 @@ namespace BlackJack {
             CardManager.Instance.Update(gameTime);
             PlayerManager.Update(gameTime);
             ButtonManager.Update(gameTime);
-            
+
+            Console.WriteLine(gamePlayState);
+
             /****/
 
-            if (Keyboard.GetState().IsKeyDown(Keys.Space)) {
-                gamePlayState = GamePlayState.PlayerAction;
+            switch (gamePlayState) {
+                case GamePlayState.InitializeState: {
+                        PlayerManager.ClearHands();
+                        PlayerManager.ClearPlayerDealerValues();
+                        cardsDealt = false;
+                        gamePlayState = GamePlayState.PlaceBets;
+                        break;
+                    }
+                case GamePlayState.PlaceBets:
+                    if (playerManager.Player.PlacedBet) {
+                        gamePlayState = GamePlayState.DealCards;
+                    }
+                    break;
+                case GamePlayState.DealCards:
+                    if (cardsDealt == false) {
+                        playerManager.Dealer.DealCards(playerManager.Player);
+                        cardsDealt = true;
+                    }
+                    if (BlackJackHandler.IsBlackJack(player) && !BlackJackHandler.IsBlackJack(dealer)) {
+                        player.HasBlackJack = true;
+                        dealer.HasBlackJack = false;
+                        gamePlayState = GamePlayState.GetWinner;
+                    }
+                    else if (BlackJackHandler.IsBlackJack(dealer)) {
+                        dealer.HasBlackJack = true;
+                        player.HasBlackJack = false;
+                        gamePlayState = GamePlayState.GetWinner;
+                    }
+                    else {
+                        dealer.HasBlackJack = false;
+                        player.HasBlackJack = false;
+                        gamePlayState = GamePlayState.PlayerAction;
+                    }
+                    break;
+                case GamePlayState.PlayerAction:
+                    if (BlackJackHandler.IsBust(player)) {
+                        player.HasBusted = true;
+                        gamePlayState = GamePlayState.GetWinner;
+                    }
+                    if (player.IsStanding) {
+                        gamePlayState = GamePlayState.DealerAction;
+                    }
+                    break;
+                case GamePlayState.DealerAction:
+                    if (BlackJackHandler.IsBust(dealer)) {
+                        dealer.HasBusted = true;
+                        gamePlayState = GamePlayState.GetWinner;
+                    }
+                    else if (!dealer.IsStanding && !dealer.HasBusted) {
+                        BlackJackHandler.DealerSelfAIAction();
+                    }
+                    else
+                        gamePlayState = GamePlayState.GetWinner;
+                    break;
+                case GamePlayState.GetWinner:
+                    int winValue = BlackJackHandler.CheckWinner(dealer, player);
+                    Console.WriteLine("WinValue is: " + winValue);
+                    if (winValue == 1 && !player.HasBeenPaid) {
+                        player.ChipCount += player.FinalBetAmount * 2;
+                        player.HasBeenPaid = true;
+                        player.playerWinState = Player.PlayerWinState.Won;
+                    }
+                    else if (winValue == 0) {
+                        player.playerWinState = Player.PlayerWinState.Lost;
+                    }
+
+                    else if (winValue == 2 && !player.HasBeenPaid) {
+                        player.ChipCount += player.FinalBetAmount + (int)(player.FinalBetAmount * 1.5f);
+                        player.HasBeenPaid = true;
+                        player.playerWinState = Player.PlayerWinState.BlackJackWin;
+                    }
+
+                    else if (winValue == -1 && !player.HasBeenPaid) {
+                        player.ChipCount += player.FinalBetAmount;
+                        player.HasBeenPaid = true;
+                        player.playerWinState = Player.PlayerWinState.Push;
+                    }
+
+                    if (Keyboard.GetState().IsKeyDown(Keys.Space))
+                        gamePlayState = GamePlayState.InitializeState;
+                    break;
             }
 
-            else if (Keyboard.GetState().IsKeyDown(Keys.Up)) {
-                playerManager.Player.ChipCount += 100;
-            }
-
-            else if (Keyboard.GetState().IsKeyDown(Keys.Down)) {
-                playerManager.Player.ChipCount -= 100;
-            }
-
-           
 
 
 
 
             /*****/
 
-            
+
         }
+
+       
 
         public void Draw(SpriteBatch spriteBatch) {
             PlayerManager.Draw(spriteBatch);
             ButtonManager.Draw(spriteBatch);
+            DrawFonts(spriteBatch);
         }
+
+        public void DrawFonts(SpriteBatch spriteBatch) {
+            spriteBatch.DrawString(font, "Chips: " + player.ChipCount.ToString(), new Vector2(800, 600), Color.Black);
+            spriteBatch.DrawString(font, "BetAmount: " + player.BetAmount.ToString(), new Vector2(800, 625), Color.Black);
+        }
+
+        /*
+        -GameStart()
+        -Initialize(){
+        -create/shuffle deck
+        -create players
+        -create buttons
+        -state=place bets
+        }
+        {PlaceBets}
+        -clear table
+        -place bets
+        -once "Bet" is pressed state = DealCards
+        {DealCards}
+        dealers deals cards
+        -check blackjack (if blackjack...state = getwinner)
+        -if (no blackjack state = playeraction)
+        {playerAction}
+        -get input(after every hit or dd) check if bust
+        -if (bust, state = getwinner)
+        -if (bust on a leg of split, or stand on leg of split continue)//implement later
+        -if (stand, state = dealerAction)
+        {dealerAction}
+        -do Dealer AI actions
+        -if bust (state = getwinner)
+        -compare dealer value to player value
+        -state = getwinner.
+        {getwinner}
+        -if busts do bust logic
+        -if comparing values do compare values logic
+        -display win or loss message
+        -allocate money 
+        state = placebets
+        
+
+        
+
+
+   
+
+        
+
+
+
+
+
+
+
+
+
+
+    */
     }
 }

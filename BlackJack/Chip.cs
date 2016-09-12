@@ -7,6 +7,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace BlackJack {
+
+    //NOT BEING USED ATM...ENDED UP MAKING CHIPS AS BUTTONS
     class Chip : Sprite {
         public Vector2 Position { get { return position; } set { position = value; } }
         public Rectangle SourceRectangle { get { return sourceRectangle; } private set { } }
